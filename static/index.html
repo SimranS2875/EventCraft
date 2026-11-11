@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EventCraft</title>
+<link rel="stylesheet" href="/static/style.css">
+<script src="/static/nav.js"></script>
+<script src="/static/art.js"></script>
+<style>
+  :root { --panel:#efe8f3; --c-venue:#6a4c93; --c-food:#f2a900; --c-dessert:#e8743b; --c-decor:#1f8a5b; --c-entertainment:#c2255c; --c-photography:#3b6fd8; --c-gifts:#8a6fd8; }
+  .app { display:grid; grid-template-columns:minmax(0,1.05fr) minmax(360px,.95fr); height:100vh; }
+  button { font:inherit; cursor:pointer; }
+
+  /* ---------- chat ---------- */
+  .chat { display:flex; flex-direction:column; min-height:0; min-width:0; }
+  .chat-head { display:flex; align-items:center; justify-content:space-between; padding:16px 28px; }
+  .chat-head h1 { margin:0; font:700 18px var(--display); }
+  .ghost { background:none; border:1px solid var(--line); border-radius:10px; padding:7px 14px; color:var(--ink); font-weight:600; font-size:14px; }
+  .ghost:hover { background:#fff; border-color:#d3c5db; }
+  #log { flex:1; overflow-y:auto; padding:8px 28px 20px; display:flex; flex-direction:column; gap:10px; scroll-behavior:smooth; }
+  #log > * { width:100%; max-width:680px; margin-inline:auto; }
+  .hero { margin-block:auto; padding:24px 0; }
+  .hero h2 { font:700 clamp(34px,4.6vw,56px)/1.02 var(--display); letter-spacing:-.03em; margin:0 0 14px; }
+  .hero p { color:var(--muted); font-size:17px; margin:0 0 26px; max-width:46ch; }
+  .starters { display:grid; gap:10px; }
+  .starters button { text-align:left; background:#fff; border:1px solid var(--line); border-radius:14px; padding:14px 16px; color:var(--ink); line-height:1.45; display:flex; gap:12px; align-items:flex-start; transition:border-color .15s, transform .15s; }
+  .starters button:hover { border-color:var(--marigold); transform:translateX(3px); }
+  .starters b { flex:none; width:10px; height:10px; border-radius:50%; margin-top:6px; }
+  .msg { display:flex; }
+  .msg > div { max-width:86%; padding:11px 15px; border-radius:16px; white-space:pre-wrap; overflow-wrap:anywhere; }
+  .msg.user { justify-content:flex-end; }
+  .msg.user > div { background:var(--plum); color:#fff; border-bottom-right-radius:5px; }
+  .msg.bot > div { background:#fff; border:1px solid var(--line); border-bottom-left-radius:5px; }
+  .msg.err > div { background:#fdecea; border-color:#f3c1bd; color:#8a211c; }
+  .typing > div { display:flex; gap:5px; padding:15px; }
+  .typing i { width:7px; height:7px; border-radius:50%; background:var(--muted); animation:bob 1s infinite; }
+  .typing i:nth-child(2) { animation-delay:.15s; } .typing i:nth-child(3) { animation-delay:.3s; }
+  @keyframes bob { 0%,60%,100% { transform:none; opacity:.4; } 30% { transform:translateY(-4px); opacity:1; } }
+  .dock { padding:0 28px 20px; }
+  .dock > * { max-width:680px; margin-inline:auto; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
+  .chips button { background:#fff; border:1px solid var(--line); border-radius:99px; color:var(--plum2); font-size:13.5px; font-weight:500; padding:6px 13px; }
+  .chips button:hover { border-color:var(--marigold); }
+  .composer { display:flex; align-items:flex-end; gap:8px; background:#fff; border:1px solid #d9cce0; border-radius:18px; padding:8px 8px 8px 16px; box-shadow:0 6px 24px -12px rgba(42,22,51,.35); }
+  .composer:focus-within { border-color:var(--plum); }
+  .composer textarea { flex:1; border:0; outline:0; resize:none; font:inherit; color:inherit; background:none; padding:8px 0; max-height:140px; line-height:1.45; }
+  .composer button { flex:none; width:40px; height:40px; border-radius:12px; border:0; background:var(--marigold); color:var(--plum); display:grid; place-items:center; }
+  .composer button:hover { background:#ffb915; }
+  .composer button:disabled { opacity:.45; cursor:default; }
+  .composer svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; }
+
+  /* ---------- plan panel ---------- */
+  .plan { background:var(--panel); display:flex; flex-direction:column; min-height:0; min-width:0; border-left:1px solid var(--line); }
+  .tabs { display:flex; gap:4px; padding:14px 22px 0; }
+  .tabs button { background:none; border:0; padding:8px 14px; border-radius:10px 10px 0 0; color:var(--muted); font-weight:600; border-bottom:2px solid transparent; }
+  .tabs button[aria-selected="true"] { color:var(--plum); border-bottom-color:var(--plum); }
+  .tabs .count { font-weight:500; color:var(--muted); margin-left:4px; }
+  .pane { flex:1; overflow-y:auto; padding:20px 22px 28px; }
+  .blank { height:100%; display:grid; place-content:center; text-align:center; color:var(--muted); gap:14px; padding:20px; }
+  .blank .stub { width:210px; height:120px; margin:0 auto; border:2px dashed #cdbfd6; border-radius:16px; position:relative; }
+  .blank .stub::before, .blank .stub::after { content:""; position:absolute; top:38px; width:20px; height:20px; border-radius:50%; background:var(--panel); border:2px dashed #cdbfd6; }
+  .blank .stub::before { left:-11px; clip-path:inset(0 0 0 50%); } .blank .stub::after { right:-11px; clip-path:inset(0 50% 0 0); }
+  .blank p { margin:0; max-width:30ch; }
+
+  .ticket { background:#fff; border-radius:18px; box-shadow:0 14px 40px -22px rgba(42,22,51,.5); animation:rise .45s cubic-bezier(.2,.8,.2,1); }
+  @keyframes rise { from { opacity:0; transform:translateY(14px) rotate(-.6deg); } }
+  .t-head { background:var(--plum); color:#fff; border-radius:18px 18px 0 0; padding:22px 24px 20px; }
+  .t-head h2 { font:700 34px/1.05 var(--display); letter-spacing:-.02em; margin:0 0 10px; color:#fff; }
+  .t-meta { display:flex; flex-wrap:wrap; gap:6px 18px; color:#d9cbe2; font-size:14px; }
+  .t-meta b { color:var(--marigold); font-weight:600; }
+  .perf { position:relative; border-top:2px dashed var(--line); margin:0 20px; }
+  .perf::before, .perf::after { content:""; position:absolute; top:-12px; width:22px; height:22px; border-radius:50%; background:var(--panel); }
+  .perf::before { left:-31px; } .perf::after { right:-31px; }
+  .t-body { padding:8px 24px 22px; }
+  .item { display:grid; grid-template-columns:76px 1fr auto; gap:14px; align-items:center; padding:13px 0; border-bottom:1px solid var(--line); }
+  .item .thumb { width:76px; height:52px; border-radius:10px; overflow:hidden; position:relative; }
+  .item .thumb svg { display:block; width:100%; height:100%; }
+  .item .thumb i { position:absolute; left:0; top:0; bottom:0; width:5px; }
+  .item small { display:block; color:var(--muted); font-size:13px; }
+  .item .what { font-weight:600; }
+  .item .inc { display:block; color:var(--plum2); font-size:13px; margin-top:2px; }
+  .item.skipped { opacity:.55; }
+  .item { align-items:start; }
+  .item .cost { font:600 16px var(--body); font-variant-numeric:tabular-nums; }
+  .budget { padding-top:16px; }
+  .budget-top { display:flex; justify-content:space-between; align-items:baseline; gap:10px; }
+  .budget-top .sum { font:700 26px var(--display); font-variant-numeric:tabular-nums; }
+  .budget-top .sum span { font:500 14px var(--body); color:var(--muted); }
+  .left { font-weight:700; color:var(--leaf); } .left.over { color:var(--red); }
+  .stack { position:relative; display:flex; gap:2px; height:14px; border-radius:99px; background:#eee6f2; overflow:hidden; margin:10px 0 6px; }
+  .stack i { height:100%; transition:width .5s; }
+  .mark { position:absolute; top:-3px; bottom:-3px; width:2px; background:var(--red); }
+  .pin { display:inline-flex; align-items:center; gap:2px; margin-left:8px; background:var(--plum); color:#fff; border-radius:99px; padding:1px 4px 1px 9px; font-size:12px; font-weight:600; vertical-align:middle; }
+  .pin button { background:none; border:0; color:#fff; font-size:15px; line-height:1; padding:2px 5px; border-radius:50%; }
+  .pin button:hover { background:rgba(255,255,255,.2); }
+  .browse { margin-top:14px; font-size:14px; color:var(--muted); }
+  .neg { margin-top:12px; font-size:14px; color:var(--muted); }
+  .neg button { background:none; border:0; padding:0; color:var(--rose); font-weight:600; text-decoration:underline; }
+  .t-note { background:#fff7e0; border-left:3px solid var(--marigold); padding:9px 13px; border-radius:8px; margin-top:10px; font-size:14px; }
+  h3.sec { font:700 17px var(--display); margin:26px 0 12px; }
+  .tl { list-style:none; margin:0; padding:0; position:relative; }
+  .tl::before { content:""; position:absolute; left:83px; top:8px; bottom:8px; width:2px; background:#dccfe3; }
+  .tl li { display:grid; grid-template-columns:70px 12px 1fr; gap:8px; padding:7px 0; align-items:start; position:relative; }
+  .tl time { text-align:right; color:var(--muted); font-size:13.5px; font-variant-numeric:tabular-nums; padding-top:1px; }
+  .tl li::before { content:""; grid-column:2; grid-row:1; width:10px; height:10px; border-radius:50%; background:var(--panel); border:2px solid var(--plum); margin-top:5px; z-index:1; }
+  .tl span { grid-column:3; }
+
+  /* agents thread */
+  .thread { display:grid; gap:8px; }
+  .a-msg { background:#fff; border-radius:12px; padding:11px 14px; display:grid; grid-template-columns:30px 1fr; gap:12px; border-left:3px solid transparent; }
+  .a-msg.haggle { border-left-color:var(--rose); }
+  .av { width:30px; height:30px; border-radius:50%; display:grid; place-items:center; color:#fff; font-weight:700; font-size:13px; }
+  .a-who { font-size:13px; color:var(--muted); }
+  .a-who b { color:var(--ink); }
+  .a-text { font-weight:600; margin:1px 0 4px; }
+  .pill { display:inline-block; background:#f1eaf5; color:var(--plum2); border-radius:99px; padding:1px 9px; font-size:12.5px; margin:2px 4px 0 0; }
+  .pill.good { background:#e3f4ec; color:#14633f; } .pill.warn { background:#fdecea; color:#8a211c; }
+
+  /* details */
+  dl.slots { background:#fff; border-radius:14px; margin:0; padding:6px 18px; }
+  dl.slots div { display:flex; justify-content:space-between; gap:16px; padding:10px 0; border-top:1px solid var(--line); }
+  dl.slots div:first-child { border-top:0; }
+  dl.slots dt { color:var(--muted); } dl.slots dd { margin:0; font-weight:600; text-align:right; }
+  dl.slots .missing { color:var(--muted); font-weight:400; font-style:italic; }
+  .tokens { display:flex; flex-wrap:wrap; gap:4px; }
+  .tokens span { background:#fff; border-radius:6px; padding:2px 7px; font:13px Consolas,monospace; }
+  .pane details { margin-top:14px; } .pane summary { cursor:pointer; font-weight:600; color:var(--plum2); margin-bottom:8px; }
+
+  @media (max-width:900px) {
+    .app { grid-template-columns:1fr; height:auto; }
+    .chat { height:calc(100vh - 54px); }
+    .chat-head, #log, .dock { padding-inline:16px; }
+    .plan { border-left:0; border-top:1px solid var(--line); min-height:70vh; }
+  }
+</style>
+</head>
+<body>
+<main class="app">
+  <section class="chat" aria-label="Chat">
+    <div class="chat-head"><h1>Plan an event</h1><button class="ghost" id="new" type="button">New event</button></div>
+    <div id="log" role="log" aria-live="polite">
+      <div class="hero" id="hero">
+        <h2>What are we celebrating?</h2>
+        <p>Say it the way you'd tell a friend: the occasion, how many people, when, and what you can spend.</p>
+        <div class="starters" id="starters"></div>
+      </div>
+    </div>
+    <div class="dock">
+      <div class="chips" id="chips"></div>
+      <form class="composer" id="f">
+        <textarea id="in" rows="1" aria-label="Describe your event" placeholder="Farewell for 50 people next Saturday, ₹30,000…" autofocus></textarea>
+        <button id="send" aria-label="Send message"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button>
+      </form>
+    </div>
+  </section>
+
+  <aside class="plan" aria-label="Your plan">
+    <div class="tabs" role="tablist">
+      <button role="tab" data-tab="plan" aria-selected="true">Plan</button>
+      <button role="tab" data-tab="agents" aria-selected="false">Agents<span class="count" id="acount"></span></button>
+      <button role="tab" data-tab="details" aria-selected="false">What I understood</button>
+    </div>
+    <div class="pane" id="pane" role="tabpanel"></div>
+  </aside>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+let sid = null, tab = "plan", busy = false, chatLog = [];
+const S = { plan: null, req: null, msgs: [], nlp: null };
+const KEY = "eventcraft_chat_v1";
+function save() { try { localStorage.setItem(KEY, JSON.stringify({ sid, tab, chatLog, S })); } catch (e) {} }
+function restore() {
+  try {
+    const d = JSON.parse(localStorage.getItem(KEY) || "null");
+    if (!d || !Array.isArray(d.chatLog)) return;
+    sid = d.sid || null; tab = d.tab || "plan"; Object.assign(S, d.S || {});
+    d.chatLog.forEach(([who, text]) => bubble(text, who, true));
+    if (chatLog.length) $("hero").hidden = true;
+  } catch (e) {}
+}
+
+const STARTERS = [
+  ["var(--c-food)", "Farewell party for 50 people next Saturday. My budget is ₹30,000. I want an indoor venue and vegetarian food."],
+  ["var(--c-entertainment)", "Birthday party for 60 people, budget ₹15,000, indoor, vegetarian, with a DJ."],
+  ["var(--c-venue)", "Team dinner for 25 on Friday, around 40k, rooftop, non-veg."],
+];
+STARTERS.forEach(([c, t]) => { const b = document.createElement("button"); b.type = "button"; b.innerHTML = `<b style="background:${c}"></b><span>${esc(t)}</span>`; b.onclick = () => send(t); $("starters").append(b); });
+
+function chips() {
+  const el = $("chips"); el.innerHTML = "";
+  if (!S.plan) return;
+  const outdoor = S.req && S.req.venue_pref === "Outdoor";
+  const on = k => S.plan.items.some(i => i.key === k);
+  const noDecor = S.req && S.req.decor_pref === "None", noSweet = S.req && S.req.dessert_pref === "None";
+  [outdoor ? "Make it indoor" : "Make it outdoor", `Raise the budget to ${inr(Math.round(S.plan.budget * 1.5 / 1000) * 1000)}`, noDecor ? "Add floral decor" : "Skip the decor", noSweet ? "Add dessert" : "Skip dessert", ...(on("photography") ? [] : ["Add a photographer"]), ...(on("gifts") ? [] : ["Add return gifts"])]
+    .forEach(t => { const b = document.createElement("button"); b.type = "button"; b.textContent = t; b.onclick = () => send(t); el.append(b); });
+}
+
+function bubble(text, who, quiet) {
+  if (who === "user" || who === "bot") { chatLog.push([who, text]); if (!quiet) save(); }
+  const d = document.createElement("div"); d.className = "msg " + who;
+  const inner = document.createElement("div"); inner.textContent = text; d.append(inner);
+  $("log").append(d); $("log").scrollTop = $("log").scrollHeight; return d;
+}
+function typing() { const d = bubble("", "bot typing"); d.firstChild.innerHTML = "<i></i><i></i><i></i>"; d.setAttribute("aria-label", "Planning"); return d; }
+
+/* ---------- right panel ---------- */
+const AGENT = { Coordinator: "#2a1633", Venue: "#6a4c93", Food: "#b07c00", Dessert: "#e8743b", Decor: "#1f8a5b", Entertainment: "#c2255c", Photography: "#3b6fd8", Gifts: "#8a6fd8", Budget: "#1f8a5b", Schedule: "#3b6fd8" };
+const ASK = { find_venue: "Find a venue", find_food: "Find a menu", find_dessert: "Find a dessert", find_decor: "Find decor", find_photography: "Find a photographer", find_gifts: "Find return gifts", find_entertainment: "Find entertainment", evaluate: "Does this fit the budget?", propose_cheaper: "Can you go cheaper?", build_timeline: "Build the event-day timeline" };
+const STATUS = { ok: ["Fits", "good"], over: ["Over its cap", "warn"], partial: ["Partial saving", "warn"], declined: ["Nothing cheaper", "warn"] };
+
+function agentRow(m) {
+  const b = m.body || {}, reply = m.type.endsWith("_reply");
+  let text, pills = [];
+  if (!reply) {
+    text = ASK[m.type] || m.type;
+    if (b.capacity || b.guests) pills.push([`${b.capacity || b.guests} guests`]);
+    ["type", "diet", "pref"].forEach(k => b[k] && pills.push([b[k]]));
+    if (b.skip) pills.push(["skip this"]);
+    if (b.pick) pills.push([`user picked ${b.pick}`, "good"]);
+    if (b.date) pills.push([b.date]);
+    if (b.budget) pills.push([`budget ${inr(b.budget)}`]);
+    if (b.current_cost != null) pills.push([`now ${inr(b.current_cost)}`]);
+    if (b.max_cost != null) pills.push([`up to ${inr(b.max_cost)}`]);
+    if (b.reason) pills.push([b.reason, "warn"]);
+  } else if (b.option) {
+    text = b.option.skipped ? b.option.name : `${b.option.name} for ${inr(b.option.cost)}`;
+    if (b.pinned) pills.push(["Your pick", "good"]); else if (STATUS[b.status]) pills.push(STATUS[b.status]);
+    if (b.pick_rejected) pills.push([`${b.pick_rejected} doesn't fit`, "warn"]);
+    if (b.booked) pills.push([`${b.booked.length} booked that day`, "warn"]);
+    if (b.preference_relaxed) pills.push(["Preference relaxed", "warn"]);
+  } else if (b.total != null) {
+    text = `Total is ${inr(b.total)}`;
+    pills.push(b.over_by ? [`Over by ${inr(b.over_by)}`, "warn"] : ["Within budget", "good"]);
+  } else if (b.timeline) { text = `Timeline ready with ${b.timeline.length} steps`; }
+  else { text = b.status === "declined" ? "Nothing cheaper available" : "Done"; if (b.status === "declined") pills.push(STATUS.declined); }
+  return `<div class="a-msg ${m.type.startsWith("propose_cheaper") ? "haggle" : ""}">
+    <div class="av" style="background:${AGENT[m.from] || "#75667f"}" aria-hidden="true">${esc(m.from[0])}</div>
+    <div><div class="a-who"><b>${esc(m.from)}</b> to ${esc(m.to)}</div><div class="a-text">${esc(text)}</div>
+    ${pills.map(([t, c]) => `<span class="pill ${c || ""}">${esc(t)}</span>`).join("")}</div></div>`;
+}
+
+const skipLabel = v => v === "None" ? "Skipped" : v === "Any" ? "Yes" : v;
+const blank = msg => `<div class="blank"><div class="stub" aria-hidden="true"></div><p>${msg}</p></div>`;
+
+function paint() {
+  document.querySelectorAll(".tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === tab));
+  $("acount").textContent = S.msgs.length ? S.msgs.length : "";
+  const p = S.plan, r = S.req || {};
+  let h;
+  if (tab === "plan") {
+    if (!p) h = blank(S.req ? "Almost there. Answer the question in the chat and your plan appears here." : "Your plan appears here as soon as you describe the event.");
+    else {
+      const max = Math.max(p.budget, p.total), key = i => `var(--c-${i.key || i.category.toLowerCase()})`;
+      h = `<article class="ticket">
+        <div class="t-head"><h2>${esc(r.event_type || "Your event")}</h2><div class="t-meta">
+          <span><b>${esc(r.guests)}</b> guests</span>${r.date ? `<span>${esc(r.date)}</span>` : ""}${r.venue_pref ? `<span>${esc(r.venue_pref)}</span>` : ""}${r.food_pref ? `<span>${esc(r.food_pref)}</span>` : ""}</div></div>
+        <div class="perf"></div>
+        <div class="t-body">` +
+        p.items.map(i => `<div class="item ${i.skipped ? "skipped" : ""}"><div class="thumb">${art(i.name, i.key || i.category)}<i style="background:${key(i)}"></i></div><div><div class="what">${esc(i.name)}${i.pinned ? `<span class="pin">Your pick<button type="button" data-unpin="${i.key}" aria-label="Let the agents choose the ${esc(i.category.toLowerCase())}" title="Let the agents choose">×</button></span>` : ""}</div><small>${esc(i.category)}, ${esc(i.detail.toLowerCase())}</small>${i.includes && i.includes.length ? `<span class="inc">${esc(i.includes.join(", "))}</span>` : ""}</div><div class="cost">${inr(i.cost)}</div></div>`).join("") +
+        `<div class="budget"><div class="budget-top"><div class="sum">${inr(p.total)} <span>of ${inr(p.budget)}</span></div>
+          <div class="left ${p.within_budget ? "" : "over"}">${p.within_budget ? inr(p.remaining) + " left" : inr(-p.remaining) + " over"}</div></div>
+          <div class="stack" role="img" aria-label="Spend by category against budget">` +
+        p.items.filter(i => i.cost).map(i => `<i style="width:${i.cost / max * 100}%;background:${key(i)}" title="${esc(i.category)} ${inr(i.cost)}"></i>`).join("") +
+        (p.within_budget ? "" : `<span class="mark" style="left:${p.budget / max * 100}%"></span>`) + `</div>` +
+        (p.negotiation_rounds ? `<div class="neg">The Budget Agent bargained for ${p.negotiation_rounds} round${p.negotiation_rounds > 1 ? "s" : ""}. <button type="button" data-go="agents">See the conversation</button></div>` : "") +
+        p.notes.map(n => `<div class="t-note">${esc(n)}</div>`).join("") + `<div class="browse">Want a specific vendor? <a href="/catalog">Pick it in the catalog</a>.</div></div></div></article>
+        <h3 class="sec">On the day</h3><ol class="tl">` +
+        p.timeline.map(t => `<li><time>${esc(t.time)}</time><span>${esc(t.activity)}</span></li>`).join("") + `</ol>`;
+    }
+  } else if (tab === "agents") {
+    h = S.msgs.length ? `<div class="thread">${S.msgs.map(agentRow).join("")}</div>` : blank("When the agents start planning, every message they exchange shows up here.");
+  } else {
+    if (!S.req) h = blank("Send a message to see what was picked out of it.");
+    else {
+      const rows = [["Event", r.event_type], ["Guests", r.guests], ["Date", r.date], ["Budget", r.budget && inr(r.budget)], ["Venue", r.venue_pref], ["Food", r.food_pref], ["Cuisine", r.cuisine], ["Dessert", skipLabel(r.dessert_pref)], ["Decor", skipLabel(r.decor_pref)], ["Entertainment", skipLabel(r.entertainment_pref)], ["Photography", skipLabel(r.photography_pref)], ["Return gifts", skipLabel(r.gifts_pref)],
+        ["Your picks", r.picks && Object.values(r.picks).join(", ")]];
+      h = `<dl class="slots">${rows.map(([k, v]) => `<div><dt>${k}</dt><dd class="${v ? "" : "missing"}">${v ? esc(v) : "not mentioned"}</dd></div>`).join("")}</dl>
+        ${S.nlp ? `<h3 class="sec">Your last message, word by word</h3><div class="tokens">${S.nlp.trace[0].output.map(t => `<span>${esc(t)}</span>`).join("")}</div>
+        <p style="color:var(--muted);margin:10px 0 0">Understood as: <b style="color:var(--ink)">${esc(S.nlp.intent)}</b></p>` : ""}
+        <details><summary>Requirement object sent to the Coordinator</summary><pre>${esc(JSON.stringify(S.req, null, 2))}</pre></details>`;
+    }
+  }
+  $("pane").innerHTML = h; $("pane").scrollTop = 0;
+}
+document.querySelector(".tabs").onclick = e => { const b = e.target.closest("button"); if (b) { tab = b.dataset.tab; paint(); save(); } };
+$("pane").onclick = e => {
+  const b = e.target.closest("[data-go]"); if (b) { tab = b.dataset.go; paint(); return; }
+  const u = e.target.closest("[data-unpin]"); if (u) unpin(u.dataset.unpin);
+};
+
+/* ---------- chat ---------- */
+async function post(message, pick) {
+  const res = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message, pick, session_id: sid, requirement: S.req }) });
+  const r = await res.json();
+  if (!res.ok) throw new Error(r.error || res.statusText);
+  sid = r.session_id;
+  return r;
+}
+
+function apply(r) {
+  bubble(r.reply, "bot");
+  S.req = r.requirement;
+  if (r.plan) { S.plan = r.plan; S.msgs = r.messages; tab = "plan"; }
+  if (!r.requirement) { S.plan = null; S.msgs = []; }
+  paint(); chips(); save();
+}
+async function unpin(category) {
+  if (busy) return; busy = true;
+  try { apply(await post(undefined, { category, name: null })); }
+  catch (e) { bubble("That change didn't go through (" + e.message + "). Check that the server is running, then try again.", "bot err"); }
+  busy = false;
+}
+
+async function send(text) {
+  text = text.trim(); if (!text || busy) return;
+  busy = true; $("send").disabled = true;
+  $("hero").hidden = true; $("in").value = ""; grow();
+  bubble(text, "user");
+  const dots = typing();
+  try {
+    const [r] = await Promise.all([post(text), new Promise(ok => setTimeout(ok, 450))]);
+    dots.remove(); S.nlp = r.nlp; apply(r);
+    if (r.plan && matchMedia("(max-width:900px)").matches) document.querySelector(".plan").scrollIntoView({ behavior: "smooth" });
+  } catch (e) { dots.remove(); bubble("That message didn't go through (" + e.message + "). Check that the server is running, then send it again.", "bot err"); }
+  busy = false; $("send").disabled = false; $("in").focus();
+}
+
+function grow() { const t = $("in"); t.style.height = "auto"; t.style.height = Math.min(t.scrollHeight, 140) + "px"; }
+$("in").addEventListener("input", grow);
+$("in").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send($("in").value); } });
+$("f").onsubmit = e => { e.preventDefault(); send($("in").value); };
+$("new").onclick = () => {
+  sid = null; chatLog = [];
+  Object.assign(S, { plan: null, req: null, msgs: [], nlp: null }); tab = "plan"; save();
+  document.querySelectorAll("#log .msg").forEach(m => m.remove());
+  $("hero").hidden = false; paint(); chips(); $("in").focus();
+};
+restore(); paint(); chips();
+$("log").style.scrollBehavior = "auto"; $("log").scrollTop = $("log").scrollHeight; $("log").style.scrollBehavior = "";
+const q = new URLSearchParams(location.search).get("q");  // /?q=... starts with that request
+if (q) send(q).then(() => { const t = new URLSearchParams(location.search).get("tab"); if (t) { tab = t; paint(); } });
+</script>
+</body>
+</html>

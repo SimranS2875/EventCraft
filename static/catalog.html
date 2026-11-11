@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vendor catalog · EventCraft</title>
+<link rel="stylesheet" href="/static/style.css"><script src="/static/nav.js"></script><script src="/static/art.js"></script>
+<style>
+  .cat-wrap { max-width:1180px; margin:0 auto; padding:36px 32px 96px; }
+  .cat-head { display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:16px 32px; margin-bottom:22px; }
+  .cat-head p { color:var(--muted); margin:6px 0 0; max-width:54ch; font-size:16px; }
+  .guests { background:#fff; border:1px solid var(--line); border-radius:14px; padding:10px 12px 10px 16px; display:flex; align-items:center; gap:12px; }
+  .guests label { font-weight:600; }
+  .guests small { display:block; color:var(--muted); font-weight:400; }
+  .step { display:flex; align-items:center; gap:4px; }
+  .step button { width:34px; height:34px; border-radius:10px; border:1px solid var(--line); background:#fff; font:600 18px var(--body); cursor:pointer; color:var(--plum); }
+  .step button:hover { border-color:var(--marigold); }
+  .step input { width:64px; text-align:center; font:700 18px var(--display); border:0; background:none; color:var(--ink); -moz-appearance:textfield; }
+  .step input::-webkit-outer-spin-button, .step input::-webkit-inner-spin-button { -webkit-appearance:none; }
+
+  .bar { position:sticky; top:0; z-index:5; background:var(--bg); padding:12px 0; display:flex; flex-wrap:wrap; gap:10px; align-items:center; border-bottom:1px solid var(--line); margin-bottom:8px; }
+  .seg { display:flex; flex-wrap:wrap; background:#e9e0ee; border-radius:12px; padding:3px; }
+  .seg button { border:0; background:none; padding:8px 12px; border-radius:9px; font:600 14px var(--body); color:var(--muted); cursor:pointer; white-space:nowrap; }
+  .seg button[aria-pressed="true"] { background:#fff; color:var(--plum); box-shadow:0 1px 3px rgba(42,22,51,.15); }
+  .seg span { font-weight:500; opacity:.7; margin-left:3px; }
+  .search { flex:1; min-width:180px; position:relative; }
+  .search input { width:100%; padding:10px 14px 10px 38px; border:1px solid var(--line); border-radius:12px; font:inherit; background:#fff; }
+  .search svg { position:absolute; left:12px; top:50%; translate:0 -50%; width:17px; height:17px; fill:none; stroke:var(--muted); stroke-width:2; stroke-linecap:round; }
+  .bar select { padding:10px 12px; border:1px solid var(--line); border-radius:12px; font:inherit; background:#fff; color:var(--ink); }
+  .subs { display:flex; flex-wrap:wrap; gap:6px; width:100%; }
+  .subs:empty { display:none; }
+  .subs button { border:1px solid var(--line); background:#fff; border-radius:99px; padding:5px 13px; font:500 13.5px var(--body); color:var(--plum2); cursor:pointer; }
+  .subs button[aria-pressed="true"] { background:var(--plum); border-color:var(--plum); color:#fff; }
+
+  .group h2 { margin:30px 0 14px; display:flex; align-items:baseline; gap:10px; }
+  .group h2 small { font:500 14px var(--body); color:var(--muted); }
+  .cards { display:grid; gap:18px; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); }
+  .v { background:#fff; border-radius:16px; overflow:hidden; display:flex; flex-direction:column; border:1px solid var(--line); transition:transform .18s, box-shadow .18s; }
+  .v:hover { transform:translateY(-3px); box-shadow:0 16px 34px -22px rgba(42,22,51,.55); }
+  .v.mine { border-color:var(--plum); box-shadow:0 0 0 2px var(--plum); }
+  .v .pic { aspect-ratio:16/10; position:relative; }
+  .v .pic svg { display:block; width:100%; height:100%; }
+  .v .rate { position:absolute; top:10px; right:10px; background:#fff; border-radius:99px; padding:2px 10px; font-weight:700; font-size:13px; }
+  .v .rate b { color:var(--marigold); margin-right:3px; }
+  .v .inplan { position:absolute; top:10px; left:10px; background:var(--plum); color:#fff; border-radius:99px; padding:2px 10px; font-weight:600; font-size:12.5px; }
+  .v .body { padding:14px 16px 16px; display:flex; flex-direction:column; gap:8px; flex:1; }
+  .v h3 { font:700 18px/1.2 var(--display); margin:0; }
+  .v .meta { color:var(--muted); font-size:14px; }
+  .inc b { font-size:13px; color:var(--muted); font-weight:600; }
+  .inc ul { margin:4px 0 0; padding:0; list-style:none; display:flex; flex-wrap:wrap; gap:4px; }
+  .inc li { background:#f4eef7; border-radius:7px; padding:2px 8px; font-size:13px; color:var(--plum2); }
+  .v .price { margin-top:auto; padding-top:10px; display:flex; align-items:baseline; justify-content:space-between; gap:8px; border-top:1px dashed var(--line); }
+  .v .price strong { font:700 22px var(--display); font-variant-numeric:tabular-nums; }
+  .v .price span { color:var(--muted); font-size:13px; text-align:right; }
+  .add { border:0; border-radius:11px; padding:10px 14px; font:600 14.5px var(--body); cursor:pointer; background:var(--marigold); color:var(--plum); }
+  .add:hover { background:#ffb915; }
+  .add[aria-pressed="true"] { background:var(--plum); color:#fff; }
+  .add[aria-pressed="true"]:hover { background:var(--plum2); }
+  .add:disabled { opacity:.5; cursor:default; }
+  .v.small .pic { filter:grayscale(1); opacity:.55; }
+  .v.small .price strong { color:var(--muted); }
+  .warn { color:#8a211c; background:#fdecea; border-radius:8px; padding:4px 10px; font-size:13px; font-weight:600; align-self:flex-start; }
+  .none { text-align:center; padding:60px 20px; color:var(--muted); }
+  .none button { margin-top:12px; background:var(--plum); color:#fff; border:0; border-radius:10px; padding:9px 16px; font:600 14px var(--body); cursor:pointer; }
+
+  .tray { position:fixed; left:calc(var(--rail) + 24px); right:24px; bottom:18px; z-index:20; margin-inline:auto; max-width:760px; background:var(--plum); color:#fff; border-radius:16px; padding:12px 14px 12px 20px;
+          display:flex; align-items:center; gap:16px; box-shadow:0 18px 40px -16px rgba(42,22,51,.7); }
+  .tray[hidden] { display:none; }
+  .tray p { margin:0; flex:1; line-height:1.4; }
+  .tray p b { color:var(--marigold); }
+  .tray a { flex:none; background:var(--marigold); color:var(--plum); text-decoration:none; font-weight:700; border-radius:10px; padding:9px 16px; }
+  .tray.bad { background:#8a211c; }
+  @media (max-width:900px) { .cat-wrap { padding:22px 16px 110px; } .bar { top:54px; } .tray { left:12px; right:12px; } }
+</style></head>
+<body><div class="cat-wrap">
+  <div class="cat-head">
+    <div><h1 class="title">Vendor catalog</h1><p>Everything the agents can pick from. Add a vendor to your plan and the agents build the rest of the event around it.</p></div>
+    <div class="guests"><label for="g">Guests<small>prices update</small></label>
+      <div class="step"><button type="button" id="minus" aria-label="Fewer guests">−</button><input id="g" type="number" min="1" max="999" value="50"><button type="button" id="plus" aria-label="More guests">+</button></div></div>
+  </div>
+  <div class="bar">
+    <div class="seg" id="seg"></div>
+    <div class="search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/></svg><input id="q" type="search" placeholder="Search vendors" aria-label="Search vendors"></div>
+    <select id="sort" aria-label="Sort"><option value="rating">Top rated</option><option value="low">Price: low to high</option><option value="high">Price: high to low</option></select>
+    <div class="subs" id="subs"></div>
+  </div>
+  <div id="out"><p class="na">Loading vendors…</p></div>
+</div>
+<div class="tray" id="tray" role="status" aria-live="polite" hidden><p id="traytext"></p><a href="/">View plan</a></div>
+<script>
+const $ = id => document.getElementById(id);
+const WORDS = { veg: "Vegetarian", vegan: "Vegan", jain: "Jain", nonveg: "Non-veg", north: "North Indian", south: "South Indian", chinese: "Chinese", dj: "DJ", photo: "Photo" };
+const NAMES = { venue: "Venues", food: "Food", dessert: "Desserts", decor: "Decor", entertainment: "Entertainment", photography: "Photography", gifts: "Return gifts" };
+const ORDER = ["venue", "food", "dessert", "decor", "entertainment", "photography", "gifts"];
+const SUBS = { venue: ["indoor", "outdoor"], food: ["veg", "vegan", "jain", "nonveg", "north", "south", "chinese"], dessert: ["vegan", "jain"],
+  decor: ["floral", "lights", "balloons", "traditional", "royal", "boho", "minimalist"], entertainment: ["music", "dj", "karaoke", "games", "magician"], photography: ["photo", "video"] };
+const st = { cat: "all", sub: null, q: "", sort: "rating", guests: 50 };
+let items = [], mine = ecStore.load(), busy = false;
+if (mine && mine.S && mine.S.req && mine.S.req.guests) st.guests = mine.S.req.guests;
+$("g").value = st.guests;
+
+function load(d) {
+  items = ORDER.flatMap(cat => d[cat].map(v => ({ cat, name: v.name, rating: v.rating, inc: v.includes,
+    tags: v.type ? [v.type] : [...(v.diets || []), ...(v.cuisine ? [v.cuisine] : []), ...(v.tags || [])],
+    cap: v.capacity || v.max_guests, flat: v.cost, each: v.per_plate })));
+  draw();
+}
+const cost = i => i.each ? i.each * st.guests : i.flat;
+const label = t => WORDS[t] || t[0].toUpperCase() + t.slice(1);
+const req = () => (mine && mine.S && mine.S.req) || {};
+const picked = i => (req().picks || {})[i.cat] === i.name;
+const inPlan = i => !!(mine && mine.S && mine.S.plan && mine.S.plan.items.some(p => p.key === i.cat && p.name === i.name));
+
+function card(i) {
+  const small = i.cap && i.cap < st.guests, unit = i.cat === "gifts" ? "each" : "a plate";
+  const meta = i.cat === "venue" ? `${label(i.tags[0])}, up to ${i.cap} guests` : i.cat === "entertainment" ? `Up to ${i.cap} guests`
+    : i.cat === "gifts" ? "One per guest" : i.tags.map(label).join(", ") + (i.cat === "decor" ? " theme" : "");
+  return `<article class="v ${small ? "small" : ""} ${picked(i) ? "mine" : ""}"><div class="pic">${art(i.name, i.cat)}${inPlan(i) ? '<div class="inplan">In your plan</div>' : ""}<div class="rate"><b>★</b>${i.rating.toFixed(1)}</div></div>
+    <div class="body"><h3>${esc(i.name)}</h3><div class="meta">${esc(meta)}</div>
+    ${i.inc ? `<div class="inc"><b>${i.cat === "food" || i.cat === "dessert" ? "On the plate" : i.cat === "gifts" ? "Inside" : "Includes"}</b><ul>${i.inc.map(x => `<li>${esc(x)}</li>`).join("")}</ul></div>` : ""}
+    ${small ? `<div class="warn">Too small for ${st.guests} guests</div>` : ""}
+    <div class="price"><strong>${inr(cost(i))}</strong><span>${i.each ? `${inr(i.each)} ${unit} × ${st.guests}` : "flat fee"}</span></div>
+    <button class="add" type="button" data-cat="${i.cat}" data-name="${esc(i.name)}" aria-pressed="${picked(i)}">${picked(i) ? "✓ Your pick (remove)" : "Add to plan"}</button></div></article>`;
+}
+
+function draw() {
+  const count = c => items.filter(i => c === "all" || i.cat === c).length;
+  $("seg").innerHTML = ["all", ...ORDER].map(c => `<button type="button" data-c="${c}" aria-pressed="${st.cat === c}">${c === "all" ? "All" : NAMES[c]}<span>${count(c)}</span></button>`).join("");
+  $("subs").innerHTML = (SUBS[st.cat] || []).map(s => `<button type="button" data-s="${s}" aria-pressed="${st.sub === s}">${label(s)}</button>`).join("");
+  const q = st.q.toLowerCase();
+  const list = items.filter(i => (st.cat === "all" || i.cat === st.cat) && (!st.sub || i.tags.includes(st.sub)) && (!q || (i.name + " " + i.tags.map(label).join(" ") + " " + (i.inc || []).join(" ")).toLowerCase().includes(q)))
+    .sort((a, b) => st.sort === "rating" ? b.rating - a.rating : st.sort === "low" ? cost(a) - cost(b) : cost(b) - cost(a));
+  if (!list.length) { $("out").innerHTML = `<div class="none">No vendors match that search.<br><button type="button" id="clear">Clear filters</button></div>`; return; }
+  $("out").innerHTML = ORDER.map(c => { const g = list.filter(i => i.cat === c);
+    return g.length ? `<section class="group"><h2>${NAMES[c]}<small>${g.length} option${g.length > 1 ? "s" : ""}</small></h2><div class="cards">${g.map(card).join("")}</div></section>` : ""; }).join("");
+}
+
+function tray(html, bad) { $("traytext").innerHTML = html; $("tray").className = "tray" + (bad ? " bad" : ""); $("tray").hidden = false; }
+
+async function pick(cat, name) {
+  if (busy) return; busy = true;
+  const d = ecStore.load() || { sid: null, tab: "plan", chatLog: [], S: { plan: null, req: null, msgs: [], nlp: null } };
+  const removing = ((d.S.req || {}).picks || {})[cat] === name;
+  try {
+    const res = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pick: { category: cat, name: removing ? null : name }, session_id: d.sid, requirement: d.S.req }) });
+    const r = await res.json();
+    if (!res.ok) throw new Error(r.error || res.statusText);
+    d.sid = r.session_id; d.S.req = r.requirement; d.tab = "plan";
+    if (r.plan) { d.S.plan = r.plan; d.S.msgs = r.messages; }
+    d.chatLog.push(["bot", r.reply]);
+    ecStore.save(d); mine = d; draw();
+    const p = r.plan, total = p ? ` Plan total <b>${inr(p.total)}</b> of ${inr(p.budget)}${p.within_budget ? "" : ", over budget"}.` : "";
+    if (r.rejected) tray(`<b>${esc(name)}</b> doesn't fit your event (guest count, venue type, date or diet), so the agents kept their own choice.`, true);
+    else if (removing) tray(`Removed <b>${esc(name)}</b> as your pick.${total}`);
+    else if (p) tray(`Added <b>${esc(name)}</b>.${total}`, !p.within_budget);
+    else tray(`Saved <b>${esc(name)}</b>. Tell the planner your guest count and budget to build the plan.`);
+  } catch (e) { tray(`That didn't save (${esc(e.message)}). Check that the server is running, then try again.`, true); }
+  busy = false;
+}
+
+$("seg").onclick = e => { const b = e.target.closest("button"); if (b) { st.cat = b.dataset.c; st.sub = null; draw(); } };
+$("subs").onclick = e => { const b = e.target.closest("button"); if (b) { st.sub = st.sub === b.dataset.s ? null : b.dataset.s; draw(); } };
+$("q").oninput = e => { st.q = e.target.value.trim(); draw(); };
+$("sort").onchange = e => { st.sort = e.target.value; draw(); };
+const setG = n => { st.guests = Math.max(1, Math.min(999, Math.round(n) || 1)); $("g").value = st.guests; draw(); };
+$("g").onchange = e => setG(+e.target.value);
+$("minus").onclick = () => setG(st.guests - 10); $("plus").onclick = () => setG(st.guests + 10);
+$("out").onclick = e => {
+  if (e.target.id === "clear") { Object.assign(st, { cat: "all", sub: null, q: "" }); $("q").value = ""; draw(); return; }
+  const b = e.target.closest(".add"); if (b) pick(b.dataset.cat, b.dataset.name);
+};
+fetch("/api/catalog").then(r => { if (!r.ok) throw new Error(r.statusText); return r.json(); }).then(load)
+  .catch(e => { $("out").innerHTML = `<div class="none">The catalog didn't load (${esc(e.message)}). Check that the server is running, then reload.</div>`; });
+</script></body></html>
